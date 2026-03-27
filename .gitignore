@@ -16,6 +16,18 @@ yarn-error.log
 .env.local
 .env.*.local
 
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+server/.venv/
+
 # Logs
 logs/
 *.log

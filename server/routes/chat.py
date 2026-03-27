@@ -2,8 +2,8 @@
 Rutas para el chat (endpoints de la API)
 """
 
-from ..models.message import Message, ChatRequest, ChatResponse
-from ..services.ollama import OllamaService
+from models.message import Message, ChatRequest, ChatResponse
+from services.ollama import OllamaService
 
 
 class ChatRoutes:

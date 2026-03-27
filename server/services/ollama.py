@@ -4,7 +4,8 @@ Servicio de comunicación con Ollama
 
 import requests
 from typing import Optional
-from ..config.config import OLLAMA_BASE_URL, OLLAMA_TIMEOUT
+
+from config.config import OLLAMA_BASE_URL, OLLAMA_TIMEOUT
 
 
 class OllamaService:

@@ -1,139 +1,224 @@
 # CORTEX - Self-hosted AI Workspace
 
-Un workspace de IA local y autoalojado con arquitectura separada:
--  **Frontend simple** (HTML/CSS/JavaScript vanilla)
--  **Backend REST** (Flask + Python)
--  **Conexión a Ollama** para LLM local
+A local and self-hosted AI workspace with separated architecture:
+-  **Simple Frontend** (HTML/CSS/Vanilla JavaScript)
+-  **REST Backend** (Flask + Python)
+-  **Ollama Connection** for local LLM
 
-##  Características
+##  Features
 
- Chat con IA local  
- API REST completa  
- Selector de modelos  
- Interfaz moderna (tema oscuro)  
- Frontend y Backend desacoplados  
- Lógica de negocio en el servidor  
- Fácil de escalar y extender
+ Chat with local AI  
+ Complete REST API  
+ Model selector  
+ Modern interface (dark theme)  
+ Decoupled Frontend and Backend  
+ Business logic on the server  
+ Easy to scale and extend
 
-##  Estructura
+##  Structure
 
 ```
 CORTEX/
-├── client/              ← Frontend (WebUI Simple)
-│   ├── index.html       ← Página web
+├── client/              ← Frontend (Simple WebUI)
+│   ├── index.html       ← Web page
 │   ├── css/
-│   │   └── style.css    ← Estilos
+│   │   └── style.css    ← Styles
 │   └── js/
-│       ├── config.js    ← URL de la API
-│       ├── api.js       ← Cliente HTTP
-│       └── app.js       ← Lógica de interfaz
+│       ├── config.js    ← API URL
+│       ├── api.js       ← HTTP Client
+│       └── app.js       ← Interface logic
 │
-└── server/              ← Backend (API REST)
-    ├── main.py          ← Punto de entrada (Flask)
-    ├── requirements.txt ← Dependencias Python
-    ├── config/          ← Configuración
-    ├── models/          ← Estructuras de datos
-    ├── routes/          ← Endpoints de API
-    └── services/        ← Lógica de negocio
+└── server/              ← Backend (REST API)
+    ├── main.py          ← Entry point (Flask)
+    ├── requirements.txt ← Python dependencies
+    ├── config/          ← Configuration
+    ├── models/          ← Data structures
+    ├── routes/          ← API endpoints
+    └── services/        ← Business logic
 ```
 
-##  Requisitos
+##  Requirements
 
-- **Ollama** instalado y ejecutándose
-  - Descargar: https://ollama.ai
-  - Modelo: `ollama pull llama2`
+- **Ollama** installed and running
+  - Download: https://ollama.ai
+  - Model: `ollama pull llama2`
 
-- **Python 3.8+** (para el servidor)
-  - Flask y requests se instalan con `requirements.txt`
+- **Python 3.8+** (for the server)
+  - Dependencies are installed from `server/requirements.txt`
+  - Recommended: use a local virtualenv in `server/.venv`
 
-##  Instalación Rápida (4 Pasos)
+##  Quick Installation (4 Steps)
 
-### Paso 1: Iniciar Ollama
+### Step 1: Start Ollama
 ```bash
 ollama serve
 ```
-Ollama escuchará en `http://localhost:11434`
+Ollama will listen on `http://localhost:11434`
 
-### Paso 2: Instalar dependencias del servidor
+### Step 2: Install server dependencies
 ```bash
-cd /home/santi/Documents/CORTEX/server
+cd server
+
+# Create a local virtualenv (recommended)
+python3 -m venv .venv
+
+# If you see "ensurepip is not available" on Ubuntu/Debian:
+#   sudo apt install python3-venv
+
+. .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Paso 3: Iniciar el servidor backend (nueva terminal)
+### Step 3: Start the backend server (new terminal)
 ```bash
-cd /home/santi/Documents/CORTEX/server
-python main.py
+cd server
+. .venv/bin/activate
+python3 main.py
 ```
-Servidor disponible en `http://localhost:8000`
+Server available at `http://localhost:8000`
 
-### Paso 4: Servir el cliente frontend (nueva terminal)
+### Step 4: Serve the frontend client (new terminal)
 ```bash
-cd /home/santi/Documents/CORTEX/client
-python3 -m http.server 8000
+cd client
+python3 -m http.server 8080
 ```
 
-**Abrir en navegador:** `http://localhost:8000`
+**Open in browser:** `http://localhost:8080`
 
-##  API REST
+Note: the backend API already uses port `8000`. The frontend must use a different port (like `8080`) to avoid the browser sending `/api/*` requests to the static server.
+
+## Daily usage (run + stop)
+
+### Ports (important)
+- Backend API (Flask): `http://localhost:8000`
+- Ollama: `http://localhost:11434`
+- Frontend (static server): `http://localhost:8080`
+
+If you serve the frontend on `8000`, the browser will hit the static server for `/api/*` and you can see errors like `OPTIONS 501 Unsupported method`.
+
+### Start (recommended: 3 terminals)
+
+#### Terminal 1 — Ollama
+If Ollama is not already running:
+```bash
+ollama serve
+```
+
+If Ollama runs as a system service:
+```bash
+sudo systemctl start ollama
+```
+
+#### Terminal 2 — Backend API
+```bash
+cd server
+. .venv/bin/activate
+python3 main.py
+```
+
+Quick check:
+```bash
+curl http://localhost:8000/api/health
+```
+
+#### Terminal 3 — Frontend
+```bash
+cd client
+python3 -m http.server 8080
+```
+
+Open in browser:
+- `http://localhost:8080`
+
+### Stop (clean)
+
+If you started them in terminals:
+- In the Backend terminal: press `Ctrl+C`
+- In the Frontend terminal: press `Ctrl+C`
+- Ollama:
+  - If you started it manually: press `Ctrl+C` in that terminal
+  - If it’s a service: `sudo systemctl stop ollama`
+
+### Stop (if you closed a terminal and it’s still running)
+
+See what is listening on the ports:
+```bash
+sudo lsof -iTCP:11434 -sTCP:LISTEN
+sudo lsof -iTCP:8000  -sTCP:LISTEN
+sudo lsof -iTCP:8080  -sTCP:LISTEN
+```
+
+Kill by port (targeted):
+```bash
+sudo kill $(sudo lsof -t -iTCP:11434 -sTCP:LISTEN)
+sudo kill $(sudo lsof -t -iTCP:8000  -sTCP:LISTEN)
+sudo kill $(sudo lsof -t -iTCP:8080  -sTCP:LISTEN)
+```
+
+If something refuses to stop:
+```bash
+sudo kill -9 $(sudo lsof -t -iTCP:11434 -sTCP:LISTEN)
+```
+
+##  REST API
 
 ### Endpoints
 
-| Método | URL | Descripción |
+| Method | URL | Description |
 |--------|-----|-------------|
-| `GET` | `/api/health` | Verificar estado del servidor |
-| `GET` | `/api/models` | Listar modelos disponibles |
-| `POST` | `/api/chat` | Enviar mensaje de chat |
+| `GET` | `/api/health` | Check server status |
+| `GET` | `/api/models` | List available models |
+| `POST` | `/api/chat` | Send chat message |
 
-### Ejemplo: Enviar un mensaje
+### Example: Send a message
 ```bash
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Hola", "model": "llama2"}'
+  -d '{"message": "Hello", "model": "llama2"}'
 ```
 
-### Formato de Request
+### Request Format
 ```json
 {
-    "message": "Tu pregunta aquí",
+    "message": "Your question here",
     "model": "llama2"
 }
 ```
 
-### Formato de Response
+### Response Format
 ```json
 {
     "success": true,
     "data": {
-        "response": "Respuesta del modelo...",
+        "response": "Model response...",
         "model": "llama2",
         "timestamp": "2026-03-25T23:00:00"
     }
 }
 ```
 
-##  Configuración
+##  Configuration
 
-### Cliente: `client/js/config.js`
+### Client: `client/js/config.js`
 ```javascript
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:8000',  // URL del servidor
-    REQUEST_TIMEOUT: 60000                   // Timeout en ms
+    API_BASE_URL: 'http://localhost:8000',  // Server URL
+    REQUEST_TIMEOUT: 60000                   // Timeout in ms
 };
 ```
 
-### Servidor: `server/config/config.py`
+### Server: `server/config/config.py`
 ```python
-OLLAMA_BASE_URL = 'http://localhost:11434'  # URL de Ollama
-API_PORT = 8000                              # Puerto del server
-DEFAULT_MODEL = 'llama2'                     # Modelo por defecto
+OLLAMA_BASE_URL = 'http://localhost:11434'  # Ollama URL
+API_PORT = 8000                              # Server port
+DEFAULT_MODEL = 'llama2'                     # Default model
 ```
 
-##  Próximas Mejoras
+##  Upcoming Improvements
 
 **Frontend:**
-- Historial de conversaciones
-- Exportar/descargar chats
+- Conversation history
+- Export/download chats
 - Dark/Light mode toggle
 - PWA (Progressive Web App)
 
@@ -141,68 +226,71 @@ DEFAULT_MODEL = 'llama2'                     # Modelo por defecto
 - RAG (Retrieval-Augmented Generation)
 - Fine-tuning pipeline
 - Chain-of-Thought reasoning
-- Base de datos persistente
-- Autenticación y sesiones
-- Rate limiting y caché
+- Persistent database
+- Authentication and sessions
+- Rate limiting and caching
 
-##  Solución de Problemas
+##  Troubleshooting
 
-### "No puedo conectar al servidor"
+### "I can't connect to the server"
 ```bash
-# 1. Verifica que el servidor está corriendo
-ps aux | grep "python main.py"
+# 1. Check that the server is running
+ps aux | grep "python3 main.py"
 
-# 2. Instala las dependencias
-pip install -r server/requirements.txt
+# 2. Install the dependencies (recommended: inside a venv)
+cd server
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 
-# 3. Revisa que la URL es correcta en client/js/config.js
+# 3. Check that the URL is correct in client/js/config.js
 ```
 
-### "Ollama no responde"
+### "Ollama doesn't respond"
 ```bash
-# 1. Verifica que Ollama está ejecutándose
+# 1. Check that Ollama is running
 ps aux | grep ollama
 
-# 2. Verifica que existe el modelo
+# 2. Check that the model exists
 ollama list
 
-# 3. Descarga un modelo
+# 3. Download a model
 ollama pull llama2
 ```
 
-### "Puerto 8000 ya está en uso"
+### "Port 8000 is already in use"
 ```bash
-# Opción 1: Matar el proceso que usa el puerto
+# Option 1: Kill the process using the port
 lsof -ti:8000 | xargs kill -9
 
-# Opción 2: Cambiar el puerto en server/main.py
-# Cambiar: app.run(host='0.0.0.0', port=8001)
+# Option 2: Change the port in server/main.py
+# Change: app.run(host='0.0.0.0', port=8001)
 ```
 
-##  Arquitectura
+##  Architecture
 
-**Frontend Simple:**
-- Sin modelos de datos complejos
-- Sin lógica de negocio
-- Solo comunica con la API del servidor
-- Renderiza la interfaz de usuario
+**Simple Frontend:**
+- No complex data models
+- No business logic
+- Only communicates with the server API
+- Renders the user interface
 
-**Backend Completo:**
-- Toda la lógica de negocio
-- Modelos de datos y validación
-- Comunicación con Ollama
-- Manejo de errores centralizado
+**Complete Backend:**
+- All business logic
+- Data models and validation
+- Communication with Ollama
+- Centralized error handling
 
 
-##  Licencia
+##  License
 
 MIT
 
-##  Contribuir
+##  Contributing
 
-Las contribuciones son bienvenidas. Por favor:
-1. Fork el proyecto
-2. Crea una rama (`git checkout -b feature/improvement`)
-3. Commit tus cambios (`git commit -m 'Add improvement'`)
-4. Push a la rama (`git push origin feature/improvement`)
-5. Abre un Pull Request
+Contributions are welcome. Please:
+1. Fork the project
+2. Create a branch (`git checkout -b feature/improvement`)
+3. Commit your changes (`git commit -m 'Add improvement'`)
+4. Push to the branch (`git push origin feature/improvement`)
+5. Open a Pull Request
