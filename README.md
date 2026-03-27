@@ -10,7 +10,7 @@ A local and self-hosted AI workspace with separated architecture:
  Chat with local AI  
  Complete REST API  
  Model selector  
- Modern interface (dark theme)  
+ Simple WebUI inspired by Pewdiepie's WebUI 
  Decoupled Frontend and Backend  
  Business logic on the server  
  Easy to scale and extend
@@ -19,7 +19,7 @@ A local and self-hosted AI workspace with separated architecture:
 
 ```
 CORTEX/
-├── client/              ← Frontend (Simple WebUI)
+├── client/              ← Frontend 
 │   ├── index.html       ← Web page
 │   ├── css/
 │   │   └── style.css    ← Styles
