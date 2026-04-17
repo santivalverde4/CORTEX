@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORTEX - Local LLM Studio</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>⚡ CORTEX</h1>
+      <p>Self-hosted AI Workspace</p>
+    </div>
+
+    <!-- Panel de Control (Modelo) -->
+    <div class="control-panel">
+      <label for="modelSelect">Selecciona un modelo:</label>
+      <select id="modelSelect">
+        <option value="">Cargando modelos...</option>
+      </select>
+      <span id="connectionStatus" class="status-indicator">🔴 Desconectado</span>
+    </div>
+
+    <!-- Area de Chat -->
+    <div class="chat-container">
+      <!-- Mensajes -->
+      <div id="chatMessages" class="chat-messages">
+        <div class="message system">
+          <p>Bienvenido a CORTEX. Selecciona un modelo y comienza a chatear.</p>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <textarea 
+          id="messageInput" 
+          placeholder="Escribe tu pregunta aquí..."
+          rows="3"
+        ></textarea>
+        <button id="sendBtn" class="send-button">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>
