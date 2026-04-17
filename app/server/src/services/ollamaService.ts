@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL Ollama
-const OLLAMA_API_URL = 'http://localhost:11434/api';
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
 
 // Obtain available models from Ollama
 export async function getAvailableModels() {
