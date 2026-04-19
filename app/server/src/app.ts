@@ -6,8 +6,20 @@ import chatRoutes from './routes/chatRoutes';
 
 const app: Express = express();
 
+// Basic hardening
+app.disable('x-powered-by');
+
 // Middlewares
-app.use(cors()); 
+// CORS is opt-in; same-origin requests (default UI flow) don't need it.
+const corsOrigin = process.env.CORS_ORIGIN;
+if (corsOrigin) {
+  const allowedOrigins = corsOrigin
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.use(cors({ origin: allowedOrigins }));
+}
+
 app.use(express.json()); 
 
 // Serve static files from the client folder
@@ -27,9 +39,10 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.use('/api', chatRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const PORT = Number(process.env.PORT) || 5000;
+const HOST = process.env.HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
 
 export default app;

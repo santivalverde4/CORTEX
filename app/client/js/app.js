@@ -1,6 +1,6 @@
 
 // ======== Configuration ========
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
 
 // ======== Elements ========
 const modelSelect = document.getElementById('modelSelect');
@@ -12,6 +12,34 @@ const sendBtn = document.getElementById('sendBtn');
 // ======== Global vars ========
 let selectedModel = null;
 let conversationHistory = []; // To maintain history
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderMarkdownSafely(markdownText) {
+  const raw = String(markdownText ?? '');
+
+  // Prefer proper Markdown rendering when libraries are available.
+  if (window.marked && window.DOMPurify) {
+    const html = window.marked.parse(raw, {
+      breaks: true,
+      gfm: true
+    });
+
+    return window.DOMPurify.sanitize(html, {
+      USE_PROFILES: { html: true }
+    });
+  }
+
+  // Fallback: preserve line breaks without allowing HTML injection.
+  return escapeHtml(raw).replace(/\n/g, '<br>');
+}
 
 // ======== Functions ========
 
@@ -67,10 +95,16 @@ function addMessage(text, sender) {
   const messageDiv = document.createElement('div');
   messageDiv.classList.add('message', sender);
 
-  const paragraph = document.createElement('p');
-  paragraph.textContent = text;
+  const content = document.createElement('div');
+  content.classList.add('message-content');
 
-  messageDiv.appendChild(paragraph);
+  if (sender === 'bot') {
+    content.innerHTML = renderMarkdownSafely(text);
+  } else {
+    content.textContent = text;
+  }
+
+  messageDiv.appendChild(content);
   chatMessages.appendChild(messageDiv);
 
   // Auto scroll to latest message
@@ -82,10 +116,11 @@ function addSystemMessage(text) {
   const messageDiv = document.createElement('div');
   messageDiv.classList.add('message', 'system');
 
-  const paragraph = document.createElement('p');
-  paragraph.textContent = text;
+  const content = document.createElement('div');
+  content.classList.add('message-content');
+  content.textContent = text;
 
-  messageDiv.appendChild(paragraph);
+  messageDiv.appendChild(content);
   chatMessages.appendChild(messageDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -96,14 +131,15 @@ function addLoadingMessage() {
   messageDiv.classList.add('message', 'loading');
   messageDiv.id = 'loadingMessage';
 
-  const paragraph = document.createElement('p');
+  const content = document.createElement('div');
+  content.classList.add('message-content');
   const spinner = document.createElement('span');
   spinner.classList.add('spinner');
   
-  paragraph.appendChild(spinner);
-  paragraph.appendChild(document.createTextNode(' Waiting for response...'));
+  content.appendChild(spinner);
+  content.appendChild(document.createTextNode(' Waiting for response...'));
 
-  messageDiv.appendChild(paragraph);
+  messageDiv.appendChild(content);
   chatMessages.appendChild(messageDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
