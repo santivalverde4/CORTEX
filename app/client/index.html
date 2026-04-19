@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,41 +7,48 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1>⚡ CORTEX</h1>
-      <p>Self-hosted AI Workspace</p>
-    </div>
-
-    <!-- Panel de Control (Modelo) -->
-    <div class="control-panel">
-      <label for="modelSelect">Selecciona un modelo:</label>
-      <select id="modelSelect">
-        <option value="">Cargando modelos...</option>
-      </select>
-      <span id="connectionStatus" class="status-indicator">🔴 Desconectado</span>
-    </div>
-
-    <!-- Area de Chat -->
-    <div class="chat-container">
-      <!-- Mensajes -->
-      <div id="chatMessages" class="chat-messages">
-        <div class="message system">
-          <div class="message-content">Bienvenido a CORTEX. Selecciona un modelo y comienza a chatear.</div>
+  <div class="app-shell">
+    <!-- Sidebar: conversations -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-title">CORTEX</div>
+          <div class="brand-subtitle">Local LLM Workspace</div>
         </div>
+        <button id="newChatBtn" class="sidebar-button" type="button">New chat</button>
       </div>
 
-      <!-- Input -->
-      <div class="chat-input-area">
-        <textarea 
-          id="messageInput" 
-          placeholder="Escribe tu pregunta aquí..."
-          rows="3"
-        ></textarea>
-        <button id="sendBtn" class="send-button">Enviar</button>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Conversations</div>
+        <ul id="conversationList" class="conversation-list"></ul>
       </div>
-    </div>
+    </aside>
+
+    <!-- Main: chat -->
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <label for="modelSelect" class="topbar-label">Model</label>
+          <select id="modelSelect" class="topbar-select">
+            <option value="">Loading models...</option>
+          </select>
+        </div>
+        <div id="connectionStatus" class="status-indicator disconnected">Offline</div>
+      </header>
+
+      <section class="chat">
+        <div id="chatMessages" class="chat-messages"></div>
+
+        <div class="chat-input-area">
+          <textarea
+            id="messageInput"
+            placeholder="Type your message..."
+            rows="3"
+          ></textarea>
+          <button id="sendBtn" class="send-button">Send</button>
+        </div>
+      </section>
+    </main>
   </div>
 
   <!-- Script -->

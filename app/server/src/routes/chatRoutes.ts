@@ -20,7 +20,7 @@ router.post('/chat', async (req: Request, res: Response) => {
   if (!model || !messages) {
     return res.status(400).json({
       success: false,
-      error: 'Se requiere model y messages'
+      error: 'model and messages are required'
     });
   }
 

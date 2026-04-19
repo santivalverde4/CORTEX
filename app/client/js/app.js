@@ -5,13 +5,127 @@ const API_BASE_URL = '/api';
 // ======== Elements ========
 const modelSelect = document.getElementById('modelSelect');
 const connectionStatus = document.getElementById('connectionStatus');
+const conversationList = document.getElementById('conversationList');
+const newChatBtn = document.getElementById('newChatBtn');
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
 
+// Start in a safe disabled state; we'll enable when connected + model selected.
+sendBtn.disabled = true;
+
 // ======== Global vars ========
 let selectedModel = null;
-let conversationHistory = []; // To maintain history
+let isServerConnected = false;
+
+const STORAGE_KEYS = {
+  conversations: 'cortex.conversations.v1',
+  activeConversationId: 'cortex.activeConversationId.v1'
+};
+
+let conversations = [];
+let activeConversationId = null;
+
+function generateId() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+
+  return `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function loadAppState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.conversations);
+    const savedActiveId = localStorage.getItem(STORAGE_KEYS.activeConversationId);
+
+    conversations = saved ? JSON.parse(saved) : [];
+    activeConversationId = savedActiveId || null;
+  } catch (e) {
+    conversations = [];
+    activeConversationId = null;
+  }
+
+  // Minimal validation
+  if (!Array.isArray(conversations)) {
+    conversations = [];
+  }
+
+  // Lightweight migration: translate old Spanish defaults.
+  conversations = conversations.map((conv) => {
+    if (!conv || typeof conv !== 'object') return conv;
+
+    if (conv.title === 'Nueva conversación') {
+      return { ...conv, title: 'New chat' };
+    }
+
+    return conv;
+  });
+}
+
+function saveAppState() {
+  localStorage.setItem(STORAGE_KEYS.conversations, JSON.stringify(conversations));
+  localStorage.setItem(STORAGE_KEYS.activeConversationId, activeConversationId || '');
+}
+
+function getConversationById(id) {
+  return conversations.find((c) => c.id === id) || null;
+}
+
+function getActiveConversation() {
+  return activeConversationId ? getConversationById(activeConversationId) : null;
+}
+
+function touchConversation(conv) {
+  conv.updatedAt = new Date().toISOString();
+}
+
+function createConversation() {
+  const now = new Date().toISOString();
+  const conv = {
+    id: generateId(),
+    title: 'New chat',
+    createdAt: now,
+    updatedAt: now,
+    messages: []
+  };
+
+  conversations.unshift(conv);
+  activeConversationId = conv.id;
+  saveAppState();
+  renderConversationList();
+  renderActiveConversation();
+}
+
+function setActiveConversation(id) {
+  if (!getConversationById(id)) return;
+  activeConversationId = id;
+  saveAppState();
+  renderConversationList();
+  renderActiveConversation();
+}
+
+function renderConversationList() {
+  // Sort by most recently updated
+  conversations.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+
+  conversationList.innerHTML = '';
+  conversations.forEach((conv) => {
+    const li = document.createElement('li');
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.classList.add('conversation-item');
+    if (conv.id === activeConversationId) {
+      btn.classList.add('active');
+    }
+    btn.textContent = conv.title || 'Conversation';
+    btn.addEventListener('click', () => setActiveConversation(conv.id));
+
+    li.appendChild(btn);
+    conversationList.appendChild(li);
+  });
+}
 
 function escapeHtml(text) {
   return text
@@ -39,6 +153,30 @@ function renderMarkdownSafely(markdownText) {
 
   // Fallback: preserve line breaks without allowing HTML injection.
   return escapeHtml(raw).replace(/\n/g, '<br>');
+}
+
+function clearMessages() {
+  chatMessages.innerHTML = '';
+}
+
+function renderActiveConversation() {
+  const conv = getActiveConversation();
+  clearMessages();
+
+  if (!conv) {
+    return;
+  }
+
+  if (!Array.isArray(conv.messages) || conv.messages.length === 0) {
+    addSystemMessage('Send a message to start.');
+    return;
+  }
+
+  conv.messages.forEach((m) => {
+    if (m.role === 'user') addMessage(m.content, 'user');
+    else if (m.role === 'assistant') addMessage(m.content, 'bot');
+    else addSystemMessage(m.content);
+  });
 }
 
 // ======== Functions ========
@@ -77,17 +215,19 @@ async function loadModels() {
 
 // 2. Update connection indicator
 function updateConnectionStatus(isConnected) {
+  isServerConnected = isConnected;
   if (isConnected) {
-    connectionStatus.textContent = 'Connected';
+    connectionStatus.textContent = 'Online';
     connectionStatus.classList.add('connected');
     connectionStatus.classList.remove('disconnected');
-    sendBtn.disabled = false;
   } else {
-    connectionStatus.textContent = 'Disconnected';
+    connectionStatus.textContent = 'Offline';
     connectionStatus.classList.add('disconnected');
     connectionStatus.classList.remove('connected');
-    sendBtn.disabled = true;
   }
+
+  // Enable only when connected and a model is selected
+  sendBtn.disabled = !(isServerConnected && !!modelSelect.value);
 }
 
 // 3. Add message to chat
@@ -167,14 +307,36 @@ async function sendMessage() {
     return;
   }
 
-  // Add user message to chat
-  addMessage(userMessage, 'user');
+  const conv = getActiveConversation();
+  if (!conv) {
+    createConversation();
+  }
 
-  // Add to history
-  conversationHistory.push({
-    role: 'user',
-    content: userMessage
-  });
+  const activeConv = getActiveConversation();
+  if (!activeConv) {
+    addSystemMessage('Could not create a conversation.');
+    return;
+  }
+
+  const isFirstUserMessage = !activeConv.messages || activeConv.messages.length === 0;
+
+  // If this is the first user message, use it as conversation title.
+  if (isFirstUserMessage) {
+    activeConv.title = userMessage.slice(0, 48);
+  }
+
+  // Clear placeholder message for a fresh conversation
+  if (isFirstUserMessage) {
+    clearMessages();
+  }
+
+  // Add user message to UI + conversation
+  addMessage(userMessage, 'user');
+  activeConv.messages = Array.isArray(activeConv.messages) ? activeConv.messages : [];
+  activeConv.messages.push({ role: 'user', content: userMessage });
+  touchConversation(activeConv);
+  saveAppState();
+  renderConversationList();
 
   // Clear input
   messageInput.value = '';
@@ -192,7 +354,7 @@ async function sendMessage() {
       },
       body: JSON.stringify({
         model: modelSelect.value,
-        messages: conversationHistory
+        messages: activeConv.messages
       })
     });
 
@@ -207,11 +369,11 @@ async function sendMessage() {
       // Add bot response
       addMessage(botReply, 'bot');
 
-      // Add to history
-      conversationHistory.push({
-        role: 'assistant',
-        content: botReply
-      });
+      // Add to conversation
+      activeConv.messages.push({ role: 'assistant', content: botReply });
+      touchConversation(activeConv);
+      saveAppState();
+      renderConversationList();
 
       console.log('Response received:', botReply);
     } else {
@@ -230,7 +392,7 @@ async function sendMessage() {
 // Change selected model
 modelSelect.addEventListener('change', (e) => {
   selectedModel = e.target.value;
-  addSystemMessage(`Selected model: ${selectedModel}`);
+  sendBtn.disabled = !(isServerConnected && !!selectedModel);
 });
 
 // Send message with button
@@ -247,6 +409,22 @@ messageInput.addEventListener('keydown', (e) => {
 // ======== INITIALIZATION ========
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Starting CORTEX Web UI...');
+  loadAppState();
+
+  if (!conversations.length) {
+    createConversation();
+  } else {
+    // Ensure we have an active conversation
+    const exists = activeConversationId && getConversationById(activeConversationId);
+    if (!exists) {
+      activeConversationId = conversations[0]?.id || null;
+    }
+
+    saveAppState();
+    renderConversationList();
+    renderActiveConversation();
+  }
+
   loadModels();
-  addSystemMessage('Connecting to server...');
+  newChatBtn.addEventListener('click', createConversation);
 });
