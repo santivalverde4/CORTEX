@@ -416,6 +416,67 @@ body::before {
   cursor: not-allowed;
 }
 
+.reasoning-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+
+.reasoning-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.reasoning-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-1);
+  flex: none;
+  transition: border-color 120ms ease;
+}
+
+.reasoning-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: var(--text);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.reasoning-toggle input:checked + .reasoning-slider {
+  border-color: var(--border-strong);
+}
+
+.reasoning-toggle input:checked + .reasoning-slider::before {
+  transform: translate(20px, -50%);
+  background: var(--electric);
+}
+
+.reasoning-toggle:focus-within .reasoning-slider {
+  border-color: var(--border-strong);
+}
+
+.reasoning-text {
+  letter-spacing: 0.04em;
+}
+
 /* Scrollbars */
 .chat-messages::-webkit-scrollbar,
 .sidebar-section::-webkit-scrollbar {

@@ -184,12 +184,13 @@ npm install
 ## Next Steps (Roadmap)
 
 - [ ] Add streaming responses (real-time token generation)
+- [X] Add targeted reasoning (chain-of-thought)
 - [ ] Implement chat history persistence (localStorage)
 - [ ] Add RAG (document upload & retrieval)
 - [ ] Fine-tuning pipeline
 - [ ] Multiple model comparison (council voting system)
 - [ ] System prompts & model parameters UI
-- [ ] Dark/Light theme toggle
+
 
 ---
 

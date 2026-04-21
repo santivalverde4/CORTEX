@@ -10,6 +10,7 @@ const newChatBtn = document.getElementById('newChatBtn');
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
+const reasoningToggle = document.getElementById('reasoningToggle');
 
 // Start in a safe disabled state; we'll enable when connected + model selected.
 sendBtn.disabled = true;
@@ -346,6 +347,17 @@ async function sendMessage() {
   addLoadingMessage();
 
   try {
+    const reasoningOn = !!(reasoningToggle && reasoningToggle.checked);
+    const systemInstruction = reasoningOn
+      ? 'Answer with a detailed explanation. Use clear, numbered steps and include assumptions. End with a short final answer. Do not output hidden internal chain-of-thought or <think> tags.'
+      : 'Answer with just the final answer. If details are necessary, keep them brief. Do not output hidden internal chain-of-thought or <think> tags.';
+
+    // Build request messages without mutating the stored conversation.
+    const messagesForApi = [
+      { role: 'system', content: systemInstruction },
+      ...(activeConv.messages || [])
+    ];
+
     // Send request to server
     const response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
@@ -354,7 +366,7 @@ async function sendMessage() {
       },
       body: JSON.stringify({
         model: modelSelect.value,
-        messages: activeConv.messages
+        messages: messagesForApi
       })
     });
 
