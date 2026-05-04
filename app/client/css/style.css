@@ -191,6 +191,11 @@ body::before {
   cursor: pointer;
 }
 
+.topbar-select option {
+  background: var(--bg-1);
+  color: var(--text);
+}
+
 .topbar-select:hover {
   border-color: rgba(0, 212, 255, 0.7);
 }

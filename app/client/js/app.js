@@ -192,11 +192,24 @@ async function loadModels() {
       // Clear previous options
       modelSelect.innerHTML = '';
 
+      const models = (Array.isArray(data.models) ? data.models : [])
+        .filter((m) => m && typeof m.name === 'string' && m.name.trim().length > 0)
+        .slice()
+        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
       // Add model options
-      data.models.forEach(model => {
+      models.forEach((model) => {
         const option = document.createElement('option');
         option.value = model.name;
-        option.textContent = `${model.name} (${Math.round(model.size / 1024 / 1024 / 1024)}GB)`;
+
+        // Keep the visible label compact; size goes in a tooltip.
+        option.textContent = model.name;
+
+        if (typeof model.size === 'number' && Number.isFinite(model.size) && model.size > 0) {
+          const sizeGb = model.size / 1024 / 1024 / 1024;
+          const sizeLabel = sizeGb >= 1 ? `${sizeGb.toFixed(1)} GB` : `${(model.size / 1024 / 1024).toFixed(0)} MB`;
+          option.title = `Size: ${sizeLabel}`;
+        }
         modelSelect.appendChild(option);
       });
 
